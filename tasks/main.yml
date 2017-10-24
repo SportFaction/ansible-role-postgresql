@@ -1,47 +1,19 @@
----
-# Setup/install tasks.
+# file: postgresql/tasks/main.yml
 
-- apt_repository:
-    repo: deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main
-    state: present
-    
-- name: Add an Apt signing key
-  apt_key:
-    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
-    state: present
+- include: install.yml
+  tags: [postgresql, postgresql-install]
 
-- name: Ensure PostgreSQL Python libraries are installed.
-  apt:
-    name: "{{ postgresql_python_library }}"
-    state: installed
+- include: extensions.yml
+  tags: [postgresql, postgresql-extensions]
 
-- name: Ensure PostgreSQL packages are installed.
-  apt:
-    name: "{{ item }}"
-    state: installed
-    update_cache: yes
-  with_items: "{{ postgresql_packages }}"
-
-- name: Ensure all configured locales are present.
-  locale_gen: "name={{ item }} state=present"
-  with_items: "{{ postgresql_locales }}"
-  register: locale_gen_result
-
-- name: Force-restart PostgreSQL after new locales are generated.
-  service:
-    name: "{{ postgresql_daemon }}"
-    state: restarted
-  when: locale_gen_result.changed
-
-- include: initialize.yml
 - include: configure.yml
+  tags: [postgresql, postgresql-configure]
 
-- name: Ensure PostgreSQL is started and enabled on boot.
-  service:
-    name: "{{ postgresql_daemon }}"
-    state: started
-    enabled: yes
-
-# Configure PostgreSQL.
-- include: databases.yml
 - include: users.yml
+  tags: [postgresql, postgresql-users]
+
+- include: databases.yml
+  tags: [postgresql, postgresql-databases]
+
+- include: users_privileges.yml
+  tags: [postgresql, postgresql-users]
